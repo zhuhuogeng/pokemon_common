@@ -43,7 +43,7 @@ public class PokemonScannerTest {
         initPokemonIdNameMap();
         initLatitudeAndLongitudeList();
         CloseableHttpClient httpClient = HttpClientBuilder.create().build();
-        ExecutorService executorService = Executors.newFixedThreadPool(20);
+        ExecutorService executorService = Executors.newFixedThreadPool(30);
         latitudeAndLongitudeList.forEach(l -> {
             for (double latitude=l.getMinLatitude(); latitude<l.getMaxLatitude(); latitude+=0.02) {
                 for (double longitude=l.getMinLongitude(); longitude<l.getMaxLongitude(); longitude+=0.02) {
@@ -55,14 +55,16 @@ public class PokemonScannerTest {
                         Set<Pokemon> pokemonSet = analysisPokemon(result);
                         pokemonSet.removeIf(p -> !rarePokemonIdNameMap.containsKey(p.getPokemonId()));
                         pokemonSet.removeIf(p -> existPokemonSet.contains(p));
+                        pokemonSet.removeIf(p -> p.getExpiration_time() < System.currentTimeMillis() / 1000);
                         existPokemonSet.addAll(pokemonSet);
-                        pokemonSet.forEach(p -> log.info("名称:{},消失时间:{},坐标:{},{}",
+                        pokemonSet.forEach(p -> log.info("【{}】,消失时间:{},坐标:{},{}",
                                 rarePokemonIdNameMap.get(p.getPokemonId()), p.getExpirationTimeStr(), p.getLatitude(), p.getLongitude()));
                     });
                 }
             }
         });
-        while (!executorService.isShutdown());
+        executorService.shutdown();
+        while (!executorService.isTerminated());
     }
 
     /**
@@ -124,7 +126,7 @@ public class PokemonScannerTest {
         rarePokemonIdNameMap.put("6", "喷火龙");
         rarePokemonIdNameMap.put("9", "水箭龟");
         rarePokemonIdNameMap.put("12", "巴大蝶");
-        rarePokemonIdNameMap.put("15", "大针蜂");
+//        rarePokemonIdNameMap.put("15", "大针蜂");
         rarePokemonIdNameMap.put("26", "雷丘");
         rarePokemonIdNameMap.put("28", "穿山王");
         rarePokemonIdNameMap.put("31", "尼多后");
